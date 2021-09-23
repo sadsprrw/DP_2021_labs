@@ -4,13 +4,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Program {
     static Thread th1;
     static Thread th2;
 
     static GlobalValue sldrValue = new GlobalValue(50);
-    static int semaphore = 1;
+    static AtomicInteger semaphore = new AtomicInteger();
 
     public static void main(String[] args) {
         JFrame win = new JFrame();
@@ -31,6 +32,7 @@ public class Program {
         JPanel thirdLine = new JPanel();
         JPanel fourthLine = new JPanel();
 
+        semaphore.set(1);
         JLabel lblTh1 = new JLabel("Thread 1", SwingConstants.CENTER);
         JLabel lblTh2 = new JLabel("Thread 2", SwingConstants.CENTER);
 
@@ -58,8 +60,7 @@ public class Program {
         btnStop1.setEnabled(false);
         btnStop2.setEnabled(false);
         btnStart1.addActionListener(e -> {
-            if(semaphore == 1) {
-                semaphore = 0;
+            if(semaphore.compareAndSet(1,0)) {
                 th1 = new Thread(
                         () -> {
                             while (!Thread.interrupted()) {
@@ -81,8 +82,7 @@ public class Program {
         });
 
         btnStop1.addActionListener(e -> {
-            if(semaphore == 0) {
-                semaphore = 1;
+            if(semaphore.compareAndSet(0,1)){
                 th1.interrupt();
                 btnStart1.setEnabled(true);
                 btnStart2.setEnabled(true);
@@ -91,8 +91,8 @@ public class Program {
             }
         });
         btnStart2.addActionListener(e -> {
-            if(semaphore == 1) {
-                semaphore = 0;
+            if(semaphore.get() == 1) {
+                semaphore.set(0);
                 th2 = new Thread(
                         () -> {
                             while (!Thread.interrupted()) {
@@ -114,8 +114,8 @@ public class Program {
         });
 
         btnStop2.addActionListener(e -> {
-            if(semaphore == 0) {
-                semaphore = 1;
+            if(semaphore.get() == 0) {
+                semaphore.set(1);
                 th2.interrupt();
                 btnStart1.setEnabled(true);
                 btnStart2.setEnabled(true);

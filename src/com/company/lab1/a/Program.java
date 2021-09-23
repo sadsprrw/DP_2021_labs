@@ -121,8 +121,10 @@ public class Program {
             th1 = new Thread(
                     () -> {
                         while (!Thread.interrupted()) {
-                            sldrValue.increment(1);
-                            slider.setValue(sldrValue.getValue());
+                            synchronized (slider) {
+                                sldrValue.increment(1);
+                                slider.setValue(sldrValue.getValue());
+                            }
                             try {
                                 Thread.sleep(3);
                             } catch (InterruptedException interruptedException) {
@@ -133,8 +135,10 @@ public class Program {
             th2 = new Thread(
                     () -> {
                         while (!Thread.interrupted()) {
-                            sldrValue.increment(-1);
-                            slider.setValue(sldrValue.getValue());
+                            synchronized (slider) {
+                                sldrValue.increment(-1);
+                                slider.setValue(sldrValue.getValue());
+                            }
                             try {
                                 Thread.sleep(3);
                             } catch (InterruptedException interruptedException) {
@@ -142,6 +146,8 @@ public class Program {
                             }
                         }
                     });
+            th1.setDaemon(true);
+            th2.setDaemon(true);
             th1.start();
             th2.start();
             btnStart.setEnabled(false);
