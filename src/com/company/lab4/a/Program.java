@@ -17,8 +17,10 @@ public class Program {
                             "11" + (new Random().nextInt(8999) + 1000)));
             out.println("Name with number 26352673: " +
                     reader.completeSearch(Instruction.FIND_NAME_BY_NUMBER, "26352673"));
-            out.println("Number of Alex: " +
-                    reader.completeSearch(Instruction.FIND_NUMBER_BY_NAME, "Alex"));
+            out.println("Number of Georg: " +
+                    reader.completeSearch(Instruction.FIND_NUMBER_BY_NAME, "Georg"));
+            out.println("Name with number 50505: " +
+                    reader.completeSearch(Instruction.FIND_NAME_BY_NUMBER, "50505"));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
