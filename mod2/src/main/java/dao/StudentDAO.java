@@ -110,7 +110,7 @@ public class StudentDAO {
         return null;
     }
 
-    public static List<Student> findByAirCompanyId(Long id) {
+    public static List<Student> findByStudentsGroupId(Integer id) {
         try (Connection connection = DBManager.getConnection();) {
             String sql = "SELECT * FROM Student WHERE group_id = ?";
             assert connection != null;

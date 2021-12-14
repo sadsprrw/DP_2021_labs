@@ -11,7 +11,7 @@ public class Student {
 
     }
 
-    public Student(Integer id, int groupId, String name, short age){
+    public Student(Integer id, Integer groupId, String name, short age){
         this.id = id;
         this.groupId = groupId;
         this.name = name;
