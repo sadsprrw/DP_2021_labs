@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<StudiesDepartment>
+    <StudentsGroup id="1" name="EPS-31">
+        <Student age="1" groupId="1" id="1" name="Gleb"/>
+        <Student age="1" groupId="1" id="2" name="Nikolay"/>
+        <Student age="1" groupId="1" id="3" name="Arkadiy"/>
+    </StudentsGroup>
+    <StudentsGroup id="2" name="EPS-32">
+        <Student age="2" groupId="2" id="4" name="Andrew"/>
+        <Student age="2" groupId="2" id="5" name="Sergey"/>
+    </StudentsGroup>
+    <StudentsGroup id="3" name="K-18">
+        <Student age="3" groupId="3" id="6" name="Anton"/>
+    </StudentsGroup>
+</StudiesDepartment>
