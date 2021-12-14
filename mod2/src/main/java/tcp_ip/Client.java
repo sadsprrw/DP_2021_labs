@@ -151,7 +151,7 @@ public class Client {
     }
 
     public List<Student> studentFindByStudentsGroupId(Integer studentsGroupId) {
-        String query = "StudentFindByAirCompanyId" + separator + studentsGroupId.toString();
+        String query = "StudentFindByStudentsGroupId" + separator + studentsGroupId.toString();
         return getStudents(query);
     }
 
