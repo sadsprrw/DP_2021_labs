@@ -150,7 +150,7 @@ public class Client {
         return getStudents(query);
     }
 
-    public List<Student> flightFindByStudentsGroupId(Integer studentsGroupId) {
+    public List<Student> studentFindByStudentsGroupId(Integer studentsGroupId) {
         String query = "StudentFindByAirCompanyId" + separator + studentsGroupId.toString();
         return getStudents(query);
     }
