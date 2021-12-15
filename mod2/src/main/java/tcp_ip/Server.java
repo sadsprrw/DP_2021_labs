@@ -5,12 +5,7 @@ import dao.StudentsGroupDAO;
 import models.Student;
 import models.StudentsGroup;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
+
 import java.util.List;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -194,7 +189,7 @@ public class Server {
                 }
             }
             return true;
-        } catch (IOException ex) {
+        } catch (JMSException ex) {
             return false;
         }
     }
@@ -212,12 +207,17 @@ public class Server {
         }
     }
 
-    public static void main(String[] args) {
-        Server server = new Server();
+    public void disconnect() {
         try {
-            server.start(5433);
-        } catch (IOException e) {
+            session.close();
+            connection.close();
+        } catch (JMSException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        Server server = new Server();
+        server.start();
     }
 }
