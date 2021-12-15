@@ -13,30 +13,51 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 
+import org.apache.activemq.ActiveMQConnectionFactory;
 public class Server {
-    private ServerSocket server = null;
-    private Socket socket = null;
-    private PrintWriter out = null;
-    private BufferedReader in = null;
+    private Connection connection;
+    private Session session;
+    private MessageProducer producer;
+    private MessageConsumer consumer;
     private static final String separator = "#";
 
-    public void start(int port) throws IOException {
-        server = new ServerSocket(port);
-        while (true) {
-            socket = server.accept();
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
-            while (processQuery()) ;
+    public void start() throws IOException {
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
+        try {
+            connection = factory.createConnection();
+            connection.start();
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Destination queueTo = session.createQueue("toClient");
+            Destination queueFrom = session.createQueue("fromClient");
+
+            producer = session.createProducer(queueTo);
+            producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+            consumer = session.createConsumer(queueFrom);
+
+            while (processQuery()) {
+
+            }
+        } catch (JMSException e) {
+            e.printStackTrace();
         }
     }
 
     private boolean processQuery() {
         String response;
+        String query = "";
         try {
-            String query = in.readLine();
+            Message request = consumer.receive(500);
             if (query == null) {
                 return false;
             }
+
+            if (request instanceof TextMessage) {
+                TextMessage message = (TextMessage) request;
+                query = message.getText();
+            } else { return true; }
+
 
             String [] fields = query.split(separator);
             if (fields.length == 0) {
@@ -51,7 +72,8 @@ public class Server {
                         Integer id = Integer.parseInt(fields[1]);
                         studentsGroup = StudentsGroupDAO.findById(id);
                         response = studentsGroup.getName();
-                        out.println(response);
+                        TextMessage message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentFindByStudentsGroupId":
                         id = Integer.parseInt(fields[1]);
@@ -60,14 +82,16 @@ public class Server {
                         assert list != null;
                         studentsToString(str, list);
                         response = str.toString();
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentsGroupFindByName":
                         String name = fields[1];
                         studentsGroup = StudentsGroupDAO.findByName(name);
                         assert studentsGroup != null;
                         response = studentsGroup.getId() + "";
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentUpdate":
                         id = Integer.parseInt(fields[1]);
@@ -81,7 +105,8 @@ public class Server {
                         else
                             response = "false";
                         System.out.println(response);
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentsGroupUpdate":
                         id = Integer.parseInt(fields[1]);
@@ -92,7 +117,8 @@ public class Server {
                         } else {
                             response = "false";
                         }
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentInsert":
                         groupId = Integer.parseInt(fields[2]);
@@ -104,7 +130,8 @@ public class Server {
                         } else {
                             response = "false";
                         }
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentsGroupInsert":
                         name = fields[1];
@@ -115,7 +142,8 @@ public class Server {
                         } else {
                             response = "false";
                         }
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentDelete":
                         id = Integer.parseInt(fields[1]);
@@ -126,7 +154,8 @@ public class Server {
                         } else {
                             response = "false";
                         }
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentsGroupDelete":
                         id = Integer.parseInt(fields[1]);
@@ -137,7 +166,8 @@ public class Server {
                         } else {
                             response = "false";
                         }
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentAll":
                         List<Student> studentList = StudentDAO.findAll();
@@ -145,7 +175,8 @@ public class Server {
                         assert studentList != null;
                         studentsToString(str, studentList);
                         response = str.toString();
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                     case "StudentsGroupAll":
                         List<StudentsGroup> studentsGroupList = StudentsGroupDAO.findAll();
@@ -157,7 +188,8 @@ public class Server {
                             str.append(separator);
                         }
                         response = str.toString();
-                        out.println(response);
+                        message = session.createTextMessage(response);
+                        producer.send(message);
                         break;
                 }
             }

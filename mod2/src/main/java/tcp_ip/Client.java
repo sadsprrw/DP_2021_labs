@@ -11,27 +11,58 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.jms.*;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Client {
-    private final Socket socket;
-    private final PrintWriter out;
-    private final BufferedReader in;
+    private Connection connection;
+    private Session session;
+    private MessageProducer producer;
+    private MessageConsumer consumer;
     private static final String separator = "#";
 
-    public Client(String ip, int port) throws IOException {
-        socket = new Socket(ip, port);
-        in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream()));
-        out = new PrintWriter(socket.getOutputStream(), true);
+    public Client(){
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
+        try {
+            connection = factory.createConnection();
+            connection.start();
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Destination queueOut = session.createQueue("fromClient");
+            Destination queueIn = session.createQueue("toClient");
+
+            producer = session.createProducer(queueOut);
+            producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+            consumer = session.createConsumer(queueIn);
+        } catch (JMSException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String handleMessage(String query, int timeout) throws JMSException {
+        TextMessage message = session.createTextMessage(query);
+        producer.send(message);
+        Message mes = consumer.receive(timeout);
+        if (mes == null) {
+            return null;
+        }
+
+        if (mes instanceof TextMessage) {
+            TextMessage textMessage = (TextMessage) mes;
+            return textMessage.getText();
+        }
+
+        return "";
     }
 
     public StudentsGroup studentsGroupFindById(Integer id) {
         String query = "StudentsGroupFindById" + separator + id.toString();
-        out.println(query);
-        String response;
         try {
-            response = in.readLine();
+            String response = handleMessage(query, 15000);
             return new StudentsGroup(id, response);
-        } catch (IOException e) {
+        } catch (JMSException  e) {
             e.printStackTrace();
         }
         return null;
@@ -39,11 +70,12 @@ public class Client {
 
     public StudentsGroup studentsGroupFindByName(String name) {
         String query = "StudentsGroupFindByName" + separator + name;
-        out.println(query);
+
         try {
-            Integer response = Integer.parseInt(in.readLine());
-            return new StudentsGroup(response, name);
-        } catch (IOException e) {
+            String response = handleMessage(query, 15000);
+            Integer responseId = Integer.parseInt(response);
+            return new StudentsGroup(responseId, name);
+        } catch (JMSException  e) {
             e.printStackTrace();
         }
         return null;
@@ -52,11 +84,11 @@ public class Client {
     public boolean studentUpdate(Student student) {
         String query = "StudentUpdate" + separator + student.getId() + separator + student.getGroupId() + separator
                 + student.getName() + separator + student.getAge();
-        out.println(query);
+
         try {
-            String response = in.readLine();
+            String response = handleMessage(query, 15000);
             return "true".equals(response);
-        } catch (IOException e) {
+        } catch (JMSException e) {
             e.printStackTrace();
         }
         return false;
@@ -65,11 +97,10 @@ public class Client {
     public boolean studentsGroupUpdate(StudentsGroup studentsGroup) {
         String query = "StudentsGroupUpdate" + separator + studentsGroup.getId() +
                 separator + studentsGroup.getName();
-        out.println(query);
         try {
-            String response = in.readLine();
+            String response = handleMessage(query, 15000);
             return "true".equals(response);
-        } catch (IOException e) {
+        } catch (JMSException e) {
             e.printStackTrace();
         }
         return false;
@@ -79,11 +110,10 @@ public class Client {
         String query = "StudentInsert" +
                 separator +  student.getId() + separator + student.getGroupId() + separator
                 + student.getName() + separator + student.getAge();
-        out.println(query);
         try {
-            String response = in.readLine();
+            String response = handleMessage(query, 15000);
             return "true".equals(response);
-        } catch (IOException e) {
+        } catch (JMSException e) {
             e.printStackTrace();
         }
         return false;
@@ -92,11 +122,10 @@ public class Client {
     public boolean studentsGroupInsert(StudentsGroup studentsGroup) {
         String query = "StudentsGroupInsert" +
                 separator + studentsGroup.getName();
-        out.println(query);
         try {
-            String response = in.readLine();
+            String response = handleMessage(query, 15000);
             return "true".equals(response);
-        } catch (IOException e) {
+        } catch (JMSException e) {
             e.printStackTrace();
         }
         return false;
@@ -104,11 +133,10 @@ public class Client {
 
     public boolean studentsGroupDelete(StudentsGroup studentsGroup) {
         String query = "StudentsGroupDelete" + separator + studentsGroup.getId();
-        out.println(query);
         try {
-            String response = in.readLine();
+            String response = handleMessage(query, 15000);
             return "true".equals(response);
-        } catch (IOException e) {
+        } catch (JMSException e) {
             e.printStackTrace();
         }
         return false;
@@ -116,11 +144,10 @@ public class Client {
 
     public boolean studentDelete(Student student) {
         String query = "StudentDelete" + separator + student.getId();
-        out.println(query);
         try {
-            String response = in.readLine();
+            String response = handleMessage(query, 15000);;
             return "true".equals(response);
-        } catch (IOException e) {
+        } catch (JMSException e) {
             e.printStackTrace();
         }
         return false;
@@ -128,10 +155,9 @@ public class Client {
 
     public List<StudentsGroup> studentsGroupAll() {
         String query = "StudentsGroupAll";
-        out.println(query);
         List<StudentsGroup> list = new ArrayList<>();
         try {
-            String response = in.readLine();
+            String response = handleMessage(query, 15000);
             String[] fields = response.split(separator);
             for (int i = 0; i < fields.length; i += 2) {
                 Integer id = Integer.parseInt(fields[i]);
@@ -139,7 +165,7 @@ public class Client {
                 list.add(new StudentsGroup(id, name));
             }
             return list;
-        } catch (IOException e) {
+        } catch (JMSException  e) {
             e.printStackTrace();
         }
         return null;
@@ -156,10 +182,9 @@ public class Client {
     }
 
     private List<Student> getStudents(String query) {
-        out.println(query);
         List<Student> list = new ArrayList<>();
         try {
-            String response = in.readLine();
+            String response = handleMessage(query, 15000);
             String[] fields = response.split(separator);
             for (int i = 0; i < fields.length; i += 5) {
                 Integer id = Integer.parseInt(fields[i]);
@@ -169,7 +194,7 @@ public class Client {
                 list.add(new Student(id,  groupId, name, age));
             }
             return list;
-        } catch (IOException e) {
+        } catch (JMSException e) {
             e.printStackTrace();
         }
         return null;
@@ -177,8 +202,9 @@ public class Client {
 
     public void disconnect() {
         try {
-            socket.close();
-        } catch (IOException e) {
+            session.close();
+            connection.close();
+        } catch (JMSException  e) {
             e.printStackTrace();
         }
     }
